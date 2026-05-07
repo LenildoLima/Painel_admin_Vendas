@@ -30,34 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // If user doesn't exist, try to sign up (admin_users table is initially empty)
-      if (error.message.toLowerCase().includes("invalid")) {
-        const { error: signUpErr } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (signUpErr) throw signUpErr;
-        // Try sign in again
-        const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
-        if (e2) throw e2;
-      } else {
-        throw error;
-      }
+      throw error;
     }
-    // Ensure admin_users record exists
-    const { data: existing } = await supabase
+    // Validate against admin_users (if record exists and is inactive, deny)
+    const { data: adminRow } = await supabase
       .from("admin_users")
       .select("id, ativo")
       .eq("email", email)
       .maybeSingle();
-    if (!existing) {
-      await supabase.from("admin_users").insert({ email, nome: email.split("@")[0], ativo: true });
-    } else if (existing.ativo === false) {
+    if (adminRow && adminRow.ativo === false) {
       await supabase.auth.signOut();
-      throw new Error("Usuário desativado");
+      throw new Error("Usuário administrador desativado.");
     }
-    await supabase.from("admin_users").update({ ultimo_acesso: new Date().toISOString() }).eq("email", email);
   };
 
   const signOut = async () => {
