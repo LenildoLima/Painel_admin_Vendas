@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Navigate, Link } from "@tanstack/react-router";
 import { useState, FormEvent } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -56,8 +56,8 @@ function LoginPage() {
             <Button type="submit" className="w-full" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
             </Button>
-            <p className="text-xs text-muted-foreground text-center pt-2">
-              Primeiro acesso? O usuário será criado automaticamente e adicionado à tabela <code>admin_users</code>.
+            <p className="text-sm text-center pt-2">
+              <Link to="/registrar" className="text-primary hover:underline">Criar conta</Link>
             </p>
           </form>
         </CardContent>
