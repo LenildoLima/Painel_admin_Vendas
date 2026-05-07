@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegistrarRouteImport } from './routes/registrar'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -16,6 +17,11 @@ import { Route as AdminProdutosRouteImport } from './routes/_admin/produtos'
 import { Route as AdminPedidosRouteImport } from './routes/_admin/pedidos'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 
+const RegistrarRoute = RegistrarRouteImport.update({
+  id: '/registrar',
+  path: '/registrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -49,6 +55,7 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/registrar': typeof RegistrarRoute
   '/dashboard': typeof AdminDashboardRoute
   '/pedidos': typeof AdminPedidosRoute
   '/produtos': typeof AdminProdutosRoute
@@ -56,6 +63,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/registrar': typeof RegistrarRoute
   '/dashboard': typeof AdminDashboardRoute
   '/pedidos': typeof AdminPedidosRoute
   '/produtos': typeof AdminProdutosRoute
@@ -65,20 +73,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/registrar': typeof RegistrarRoute
   '/_admin/dashboard': typeof AdminDashboardRoute
   '/_admin/pedidos': typeof AdminPedidosRoute
   '/_admin/produtos': typeof AdminProdutosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/dashboard' | '/pedidos' | '/produtos'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/registrar'
+    | '/dashboard'
+    | '/pedidos'
+    | '/produtos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/pedidos' | '/produtos'
+  to: '/' | '/login' | '/registrar' | '/dashboard' | '/pedidos' | '/produtos'
   id:
     | '__root__'
     | '/'
     | '/_admin'
     | '/login'
+    | '/registrar'
     | '/_admin/dashboard'
     | '/_admin/pedidos'
     | '/_admin/produtos'
@@ -88,10 +104,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RegistrarRoute: typeof RegistrarRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/registrar': {
+      id: '/registrar'
+      path: '/registrar'
+      fullPath: '/registrar'
+      preLoaderRoute: typeof RegistrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -155,7 +179,18 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
+  RegistrarRoute: RegistrarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
