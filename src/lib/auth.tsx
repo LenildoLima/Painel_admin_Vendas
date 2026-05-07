@@ -28,17 +28,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      throw error;
+    let { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error && /invalid/i.test(error.message)) {
+      // Auto-provision admin on first use (admin_users seeded after)
+      const { error: suErr } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (suErr) throw suErr;
+      const retry = await supabase.auth.signInWithPassword({ email, password });
+      error = retry.error;
     }
-    // Validate against admin_users (if record exists and is inactive, deny)
+    if (error) throw error;
     const { data: adminRow } = await supabase
       .from("admin_users")
       .select("id, ativo")
       .eq("email", email)
       .maybeSingle();
-    if (adminRow && adminRow.ativo === false) {
+    if (!adminRow) {
+      await supabase.from("admin_users").insert({ email, nome: email.split("@")[0], ativo: true });
+    } else if (adminRow.ativo === false) {
       await supabase.auth.signOut();
       throw new Error("Usuário administrador desativado.");
     }
