@@ -17,31 +17,48 @@ function Dashboard() {
   const [recent, setRecent] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadStats = async () => {
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+    const isoDay = startOfDay.toISOString();
+    const isoMonth = startOfMonth.toISOString();
+
+    const [pendQ, entrQ, dayQ, monthQ, recentQ] = await Promise.all([
+      supabase.from("pedidos").select("id", { count: "exact", head: true }).eq("status", "Pendente"),
+      supabase.from("pedidos").select("id", { count: "exact", head: true }).eq("status", "Entregue").gte("atualizado_em", isoDay),
+      supabase.from("pedidos").select("total").gte("criado_em", isoDay).neq("status", "Cancelado"),
+      supabase.from("pedidos").select("total").gte("criado_em", isoMonth).neq("status", "Cancelado"),
+      supabase.from("pedidos").select("*").order("criado_em", { ascending: false }).limit(5),
+    ]);
+
+    const sum = (rows: any[] | null) => (rows ?? []).reduce((a, r) => a + Number(r.total ?? 0), 0);
+    setStats({
+      pendentes: pendQ.count ?? 0,
+      entreguesHoje: entrQ.count ?? 0,
+      fatDia: sum(dayQ.data),
+      fatMes: sum(monthQ.data),
+    });
+    setRecent((recentQ.data as Pedido[]) ?? []);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    (async () => {
-      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
-      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
-      const isoDay = startOfDay.toISOString();
-      const isoMonth = startOfMonth.toISOString();
+    loadStats();
 
-      const [pendQ, entrQ, dayQ, monthQ, recentQ] = await Promise.all([
-        supabase.from("pedidos").select("id", { count: "exact", head: true }).eq("status", "Pendente"),
-        supabase.from("pedidos").select("id", { count: "exact", head: true }).eq("status", "Entregue").gte("atualizado_em", isoDay),
-        supabase.from("pedidos").select("total").gte("criado_em", isoDay).neq("status", "Cancelado"),
-        supabase.from("pedidos").select("total").gte("criado_em", isoMonth).neq("status", "Cancelado"),
-        supabase.from("pedidos").select("*").order("criado_em", { ascending: false }).limit(5),
-      ]);
+    const channel = supabase
+      .channel("dashboard_pedidos")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pedidos" },
+        () => {
+          loadStats();
+        }
+      )
+      .subscribe();
 
-      const sum = (rows: any[] | null) => (rows ?? []).reduce((a, r) => a + Number(r.total ?? 0), 0);
-      setStats({
-        pendentes: pendQ.count ?? 0,
-        entreguesHoje: entrQ.count ?? 0,
-        fatDia: sum(dayQ.data),
-        fatMes: sum(monthQ.data),
-      });
-      setRecent((recentQ.data as Pedido[]) ?? []);
-      setLoading(false);
-    })();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const cards = [

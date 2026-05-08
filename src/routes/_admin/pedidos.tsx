@@ -34,7 +34,34 @@ function PedidosPage() {
     setItems((data as Pedido[]) ?? []);
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    load();
+
+    const channel = supabase
+      .channel("pedidos_page")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "pedidos" },
+        (payload: any) => {
+          setItems((current) => [payload.new as Pedido, ...current]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "pedidos" },
+        (payload: any) => {
+          setItems((current) =>
+            current.map((item) => (item.id === payload.new.id ? (payload.new as Pedido) : item))
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -116,10 +143,9 @@ function PedidosPage() {
     </div>
   );
 }
-
 function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; onClose: () => void; onUpdated: () => void }) {
   const open = !!pedido;
-  const [itens, setItens] = useState<ItemPedido[]>([]);
+  const [itens, setItens] = useState<(ItemPedido & { produtos: { nome: string; imagem_url: string | null } | null })[]>([]);
   const [status, setStatus] = useState<string>("");
   const [dataEntrega, setDataEntrega] = useState("");
   const [horaEntrega, setHoraEntrega] = useState("");
@@ -132,9 +158,15 @@ function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; o
     setDataEntrega(pedido.data_entrega ?? "");
     setHoraEntrega(pedido.hora_entrega ?? "");
     setObs(pedido.observacoes_entrega ?? "");
-    supabase.from("itens_pedido").select("*").eq("pedido_id", pedido.id).then(({ data }) => {
-      setItens((data as ItemPedido[]) ?? []);
-    });
+    
+    // Query com join para obter nome e imagem do produto
+    supabase
+      .from("itens_pedido")
+      .select("*, produtos(nome, imagem_url)")
+      .eq("pedido_id", pedido.id)
+      .then(({ data }) => {
+        setItens((data as any) ?? []);
+      });
   }, [pedido]);
 
   const save = async () => {
@@ -203,17 +235,24 @@ function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; o
                   <TableRow>
                     <TableHead>Item</TableHead>
                     <TableHead className="w-20">Qtd</TableHead>
-                    <TableHead className="w-28">Unit.</TableHead>
-                    <TableHead className="w-28">Subtotal</TableHead>
+                    <TableHead className="w-28 text-right">Unit.</TableHead>
+                    <TableHead className="w-28 text-right">Subtotal</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {itens.map((i) => (
                     <TableRow key={i.id}>
-                      <TableCell className="font-mono text-xs">{i.produto_id?.slice(0, 8) ?? "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {i.produtos?.imagem_url && (
+                            <img src={i.produtos.imagem_url} alt={i.produtos.nome} className="h-8 w-8 rounded object-cover bg-secondary" />
+                          )}
+                          <span className="font-medium">{i.produtos?.nome ?? "Produto removido"}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{i.quantidade}</TableCell>
-                      <TableCell>{fmt(Number(i.preco_unitario))}</TableCell>
-                      <TableCell>{fmt(Number(i.subtotal))}</TableCell>
+                      <TableCell className="text-right">{fmt(Number(i.preco_unitario))}</TableCell>
+                      <TableCell className="text-right font-medium">{fmt(Number(i.subtotal))}</TableCell>
                     </TableRow>
                   ))}
                   {itens.length === 0 && (
@@ -223,31 +262,50 @@ function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; o
               </Table>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-3 text-sm">
-              <div className="rounded-md bg-secondary/50 p-3"><div className="text-muted-foreground">Subtotal</div><div className="font-semibold">{fmt(Number(pedido.subtotal))}</div></div>
-              <div className="rounded-md bg-secondary/50 p-3"><div className="text-muted-foreground">Entrega</div><div className="font-semibold">{fmt(Number(pedido.taxa_entrega))}</div></div>
-              <div className="rounded-md bg-primary/10 border border-primary/30 p-3"><div className="text-muted-foreground">Total</div><div className="font-bold text-primary">{fmt(Number(pedido.total))}</div></div>
+            <div className="flex flex-col gap-1 text-sm items-end pr-4">
+              <div className="flex w-full max-w-[200px] justify-between">
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span>{fmt(Number(pedido.subtotal))}</span>
+              </div>
+              <div className="flex w-full max-w-[200px] justify-between">
+                <span className="text-muted-foreground">Taxa Entrega:</span>
+                <span>{fmt(Number(pedido.taxa_entrega))}</span>
+              </div>
+              <div className="flex w-full max-w-[200px] justify-between font-bold text-lg pt-1 border-t border-border mt-1 text-primary">
+                <span>Total:</span>
+                <span>{fmt(Number(pedido.total))}</span>
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-3 gap-3 border-t border-border pt-5">
               <div className="space-y-1.5">
                 <Label>Status</Label>
                 <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PEDIDO_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                    <SelectItem value="Em Preparação">Em Preparação</SelectItem>
+                    <SelectItem value="Pronto">Pronto</SelectItem>
+                    <SelectItem value="Entregue">Entregue</SelectItem>
+                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Data de entrega</Label>
+                <Label>Previsão de Entrega (Data)</Label>
                 <Input type="date" value={dataEntrega} onChange={(e) => setDataEntrega(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>Hora de entrega</Label>
+                <Label>Previsão de Entrega (Hora)</Label>
                 <Input type="time" value={horaEntrega} onChange={(e) => setHoraEntrega(e.target.value)} />
               </div>
               <div className="sm:col-span-3 space-y-1.5">
-                <Label>Observações de entrega</Label>
-                <Textarea value={obs} onChange={(e) => setObs(e.target.value)} />
+                <Label>Observações Internas / Entrega</Label>
+                <Textarea 
+                  value={obs} 
+                  onChange={(e) => setObs(e.target.value)} 
+                  placeholder="Instruções para o entregador ou observações internas..."
+                />
               </div>
             </div>
           </div>
@@ -260,4 +318,4 @@ function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; o
       </DialogContent>
     </Dialog>
   );
-}
+}

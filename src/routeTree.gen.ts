@@ -9,22 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RegistrarRouteImport } from './routes/registrar'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminProdutosRouteImport } from './routes/_admin/produtos'
 import { Route as AdminPedidosRouteImport } from './routes/_admin/pedidos'
+import { Route as AdminEntradaProdutosRouteImport } from './routes/_admin/entrada-produtos'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 
-const RegistrarRoute = RegistrarRouteImport.update({
-  id: '/registrar',
-  path: '/registrar',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -46,6 +47,11 @@ const AdminPedidosRoute = AdminPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEntradaProdutosRoute = AdminEntradaProdutosRouteImport.update({
+  id: '/entrada-produtos',
+  path: '/entrada-produtos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -54,17 +60,19 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
-  '/registrar': typeof RegistrarRoute
   '/dashboard': typeof AdminDashboardRoute
+  '/entrada-produtos': typeof AdminEntradaProdutosRoute
   '/pedidos': typeof AdminPedidosRoute
   '/produtos': typeof AdminProdutosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
-  '/registrar': typeof RegistrarRoute
   '/dashboard': typeof AdminDashboardRoute
+  '/entrada-produtos': typeof AdminEntradaProdutosRoute
   '/pedidos': typeof AdminPedidosRoute
   '/produtos': typeof AdminProdutosRoute
 }
@@ -72,9 +80,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteWithChildren
+  '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
-  '/registrar': typeof RegistrarRoute
   '/_admin/dashboard': typeof AdminDashboardRoute
+  '/_admin/entrada-produtos': typeof AdminEntradaProdutosRoute
   '/_admin/pedidos': typeof AdminPedidosRoute
   '/_admin/produtos': typeof AdminProdutosRoute
 }
@@ -82,20 +91,29 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/cadastro'
     | '/login'
-    | '/registrar'
     | '/dashboard'
+    | '/entrada-produtos'
     | '/pedidos'
     | '/produtos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/registrar' | '/dashboard' | '/pedidos' | '/produtos'
+  to:
+    | '/'
+    | '/cadastro'
+    | '/login'
+    | '/dashboard'
+    | '/entrada-produtos'
+    | '/pedidos'
+    | '/produtos'
   id:
     | '__root__'
     | '/'
     | '/_admin'
+    | '/cadastro'
     | '/login'
-    | '/registrar'
     | '/_admin/dashboard'
+    | '/_admin/entrada-produtos'
     | '/_admin/pedidos'
     | '/_admin/produtos'
   fileRoutesById: FileRoutesById
@@ -103,24 +121,24 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  CadastroRoute: typeof CadastroRoute
   LoginRoute: typeof LoginRoute
-  RegistrarRoute: typeof RegistrarRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/registrar': {
-      id: '/registrar'
-      path: '/registrar'
-      fullPath: '/registrar'
-      preLoaderRoute: typeof RegistrarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin': {
@@ -151,6 +169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPedidosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/entrada-produtos': {
+      id: '/_admin/entrada-produtos'
+      path: '/entrada-produtos'
+      fullPath: '/entrada-produtos'
+      preLoaderRoute: typeof AdminEntradaProdutosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/dashboard': {
       id: '/_admin/dashboard'
       path: '/dashboard'
@@ -163,12 +188,14 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminEntradaProdutosRoute: typeof AdminEntradaProdutosRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
   AdminProdutosRoute: typeof AdminProdutosRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminEntradaProdutosRoute: AdminEntradaProdutosRoute,
   AdminPedidosRoute: AdminPedidosRoute,
   AdminProdutosRoute: AdminProdutosRoute,
 }
@@ -178,9 +205,19 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  CadastroRoute: CadastroRoute,
   LoginRoute: LoginRoute,
-  RegistrarRoute: RegistrarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

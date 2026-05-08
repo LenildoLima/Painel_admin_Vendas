@@ -11,13 +11,13 @@ import { Loader2, ShieldCheck } from "lucide-react";
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
 function LoginPage() {
-  const { session, signIn, loading } = useAuth();
+  const { token, signIn, loading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (!loading && session) return <Navigate to="/dashboard" />;
+  if (!loading && token) return <Navigate to="/dashboard" />;
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -56,10 +56,15 @@ function LoginPage() {
             <Button type="submit" className="w-full" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
             </Button>
-            <p className="text-sm text-center pt-2">
-              <Link to="/registrar" className="text-primary hover:underline">Criar conta</Link>
-            </p>
           </form>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Não tem uma conta?{" "}
+              <Link to="/cadastro" className="text-primary hover:underline font-medium">
+                Criar nova conta
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

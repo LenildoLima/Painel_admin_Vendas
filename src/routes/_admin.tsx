@@ -5,9 +5,9 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 export const Route = createFileRoute("/_admin")({ component: AdminGuard });
 
 function AdminGuard() {
-  const { session, loading } = useAuth();
+  const { token, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-background" />;
-  if (!session) return <Navigate to="/login" />;
+  if (!token) return <Navigate to="/login" />;
   return (
     <AdminLayout>
       <Outlet />

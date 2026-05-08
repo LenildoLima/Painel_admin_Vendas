@@ -1,13 +1,16 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { LayoutDashboard, Package, ShoppingCart, LogOut } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { LayoutDashboard, Package, ShoppingCart, LogOut, ArrowDownToLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/produtos", label: "Produtos", icon: Package },
+  { to: "/entrada-produtos", label: "Entrada", icon: ArrowDownToLine },
   { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
 ] as const;
 
@@ -15,6 +18,76 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const { email, signOut } = useAuth();
   const navigate = useNavigate();
   const loc = useLocation();
+  const [pendingCount, setPendingCount] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Inicializa o som de notificação
+  useEffect(() => {
+    audioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+  }, []);
+
+  const playNotification = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
+  };
+
+  const flashTitle = (msg: string) => {
+    const old = document.title;
+    let count = 0;
+    const interval = setInterval(() => {
+      document.title = count % 2 === 0 ? "🔔 NOVO PEDIDO!" : msg;
+      if (++count > 10) {
+        clearInterval(interval);
+        document.title = old;
+      }
+    }, 1000);
+  };
+
+  useEffect(() => {
+    // Busca inicial de pedidos pendentes
+    supabase
+      .from("pedidos")
+      .select("id", { count: "exact" })
+      .eq("status", "Pendente")
+      .then(({ count }) => setPendingCount(count || 0));
+
+    // Subscrição Realtime
+    const channel = supabase
+      .channel("admin_orders")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "pedidos" },
+        (payload: any) => {
+          setPendingCount((c) => c + 1);
+          playNotification();
+          toast.success(`🔔 Novo pedido ${payload.new.numero_pedido}`, {
+            description: `Valor: R$ ${payload.new.total}`,
+            duration: 5000,
+          });
+          flashTitle(`Novo pedido: ${payload.new.numero_pedido}`);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "pedidos" },
+        (payload: any) => {
+          // Se o status mudou de Pendente para algo mais, decrementa
+          if (payload.old.status === "Pendente" && payload.new.status !== "Pendente") {
+            setPendingCount((c) => Math.max(0, c - 1));
+          }
+          // Se mudou para Pendente (ex: reaberto), incrementa
+          if (payload.old.status !== "Pendente" && payload.new.status === "Pendente") {
+            setPendingCount((c) => c + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -35,14 +108,21 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                  "flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors",
                   Active
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
-                <n.icon className="h-4 w-4" />
-                {n.label}
+                <div className="flex items-center gap-3">
+                  <n.icon className="h-4 w-4" />
+                  {n.label}
+                </div>
+                {n.label === "Pedidos" && pendingCount > 0 && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
             );
           })}
