@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { LayoutDashboard, Package, ShoppingCart, LogOut, ArrowDownToLine } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, LogOut, ArrowDownToLine, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const NAV = [
   { to: "/produtos", label: "Produtos", icon: Package },
   { to: "/entrada-produtos", label: "Entrada", icon: ArrowDownToLine },
   { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
+  { to: "/clientes", label: "Clientes", icon: Users },
 ] as const;
 
 export function AdminLayout({ children }: { children: ReactNode }) {

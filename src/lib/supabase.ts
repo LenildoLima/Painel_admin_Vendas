@@ -31,12 +31,13 @@ export type Categoria = { id: string; nome: string; ativo: boolean };
 export type Pedido = {
   id: string;
   numero_pedido: string;
-  cliente_nome: string;
-  cliente_email: string | null;
-  cliente_telefone: string | null;
-  cliente_endereco: string | null;
-  cliente_bairro: string | null;
-  cliente_cidade: string | null;
+  cliente_id?: string;
+  clientes?: {
+    nome: string;
+    telefone: string | null;
+    email: string | null;
+    endereco: string | null;
+  };
   observacoes_cliente: string | null;
   status: string;
   subtotal: number;

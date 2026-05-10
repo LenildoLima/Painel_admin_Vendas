@@ -29,7 +29,7 @@ function PedidosPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("pedidos").select("*").order("criado_em", { ascending: false });
+    const { data, error } = await supabase.from("pedidos").select("*, clientes(*)").order("criado_em", { ascending: false });
     if (error) toast.error(error.message);
     setItems((data as Pedido[]) ?? []);
     setLoading(false);
@@ -70,7 +70,7 @@ function PedidosPage() {
       if (from && new Date(p.criado_em) < new Date(from)) return false;
       if (to && new Date(p.criado_em) > new Date(to + "T23:59:59")) return false;
       if (s) {
-        const hay = `${p.numero_pedido} ${p.cliente_nome} ${p.cliente_telefone ?? ""}`.toLowerCase();
+        const hay = `${p.numero_pedido} ${p.clientes?.nome} ${p.clientes?.telefone ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
@@ -123,8 +123,8 @@ function PedidosPage() {
                 {!loading && filtered.map((p) => (
                   <TableRow key={p.id} className="cursor-pointer hover:bg-secondary/50" onClick={() => setSelected(p)}>
                     <TableCell className="font-mono text-xs">{p.numero_pedido}</TableCell>
-                    <TableCell>{p.cliente_nome}</TableCell>
-                    <TableCell className="text-muted-foreground">{p.cliente_telefone}</TableCell>
+                    <TableCell>{p.clientes?.nome || "Desconhecido"}</TableCell>
+                    <TableCell className="text-muted-foreground">{p.clientes?.telefone || "—"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{format(new Date(p.criado_em), "dd/MM/yy HH:mm")}</TableCell>
                     <TableCell>{fmt(Number(p.total))}</TableCell>
                     <TableCell><Badge variant="outline" className={STATUS_COLORS[p.status] ?? ""}>{p.status}</Badge></TableCell>
@@ -185,8 +185,8 @@ function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; o
     onClose();
   };
 
-  const whatsappHref = pedido?.cliente_telefone
-    ? `https://wa.me/55${pedido.cliente_telefone.replace(/\D/g, "")}`
+  const whatsappHref = pedido?.clientes?.telefone
+    ? `https://wa.me/55${pedido.clientes.telefone.replace(/\D/g, "")}`
     : "#";
 
   return (
@@ -204,13 +204,13 @@ function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; o
             <div className="grid sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <div className="text-muted-foreground">Cliente</div>
-                <div className="font-medium">{pedido.cliente_nome}</div>
+                <div className="font-medium">{pedido.clientes?.nome || "Desconhecido"}</div>
               </div>
               <div>
                 <div className="text-muted-foreground">Telefone</div>
                 <div className="flex items-center gap-2">
-                  <span>{pedido.cliente_telefone ?? "—"}</span>
-                  {pedido.cliente_telefone && (
+                  <span>{pedido.clientes?.telefone ?? "—"}</span>
+                  {pedido.clientes?.telefone && (
                     <a href={whatsappHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-green-400 hover:underline">
                       <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                     </a>
@@ -219,7 +219,7 @@ function PedidoDetail({ pedido, onClose, onUpdated }: { pedido: Pedido | null; o
               </div>
               <div className="sm:col-span-2">
                 <div className="text-muted-foreground">Endereço</div>
-                <div>{[pedido.cliente_endereco, pedido.cliente_bairro, pedido.cliente_cidade].filter(Boolean).join(" · ") || "—"}</div>
+                <div>{pedido.clientes?.endereco || "—"}</div>
               </div>
               {pedido.observacoes_cliente && (
                 <div className="sm:col-span-2">

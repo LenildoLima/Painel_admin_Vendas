@@ -19,7 +19,17 @@ export async function signInWithAdminUsers(email: string, passwordInput: string)
   }
 
   // Compara a senha informada com o hash salvo no banco
-  const passwordMatch = bcrypt.compareSync(passwordInput, data.senha_hash);
+  let passwordMatch = false;
+  try {
+    passwordMatch = bcrypt.compareSync(passwordInput, data.senha_hash);
+  } catch (e) {
+    // ignorar erro do bcrypt se nao for um hash valido
+  }
+
+  // Fallback para senha em texto plano (caso inserido manualmente no banco)
+  if (!passwordMatch && passwordInput === data.senha_hash) {
+    passwordMatch = true;
+  }
 
   if (!passwordMatch) {
     throw new Error("Email ou senha inválidos");
