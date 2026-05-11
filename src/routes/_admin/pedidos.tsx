@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase, PEDIDO_STATUSES, STATUS_COLORS, type Pedido, type ItemPedido } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,9 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Search, MessageCircle, Loader2, AlertTriangle, RotateCcw, XCircle } from "lucide-react";
+import { Search, MessageCircle, Loader2, AlertTriangle, RotateCcw, XCircle, QrCode, CheckCircle2, Printer } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 
 export const Route = createFileRoute("/_admin/pedidos")({ component: PedidosPage });
 
@@ -181,7 +182,12 @@ function PedidoDetail({
 
   // Diálogo de confirmação de cancelamento
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState<string>("");
+  const [pendingStatus, setPendingStatus] = useState<string>("Pendente");
+
+  // PIX Modal
+  const [showPix, setShowPix] = useState(false);
+  const [storePixKey, setStorePixKey] = useState("");
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
 
   const isCancelled = ped?.status === "Cancelado";
 
@@ -192,6 +198,7 @@ function PedidoDetail({
     setHoraEntrega(pedido.hora_entrega ?? "");
     setObs(pedido.observacoes_entrega ?? "");
 
+    // Busca itens
     supabase
       .from("itens_pedido")
       .select("*, produtos(nome, imagem_url)")
@@ -199,6 +206,11 @@ function PedidoDetail({
       .then(({ data }) => {
         setItens((data as any) ?? []);
       });
+
+    // Busca chave PIX nas configurações
+    supabase.from("configuracoes").select("chave_pix").single().then(({ data }) => {
+      setStorePixKey(data?.chave_pix || "");
+    });
   }, [pedido]);
 
   // Ao tentar mudar o status
@@ -382,30 +394,65 @@ function PedidoDetail({
     }
   };
 
-  // Salvar alterações normais (APENAS metadados, NÃO mexe no estoque)
   const save = async () => {
     if (!pedido) return;
     setBusy(true);
-
     try {
-      console.log('--- SALVANDO METADADOS ---');
-      
-      const { error } = await supabase.from("pedidos").update({
-        data_entrega: dataEntrega || null,
-        hora_entrega: horaEntrega || null,
-        observacoes_entrega: obs || null,
-      }).eq("id", pedido.id);
+      const { error } = await supabase
+        .from("pedidos")
+        .update({
+          status: status,
+          data_entrega: dataEntrega || null,
+          hora_entrega: horaEntrega || null,
+          observacoes_entrega: obs || null,
+        })
+        .eq("id", pedido.id);
 
       if (error) throw error;
-
-      toast.success("Dados do pedido atualizados");
+      toast.success("Pedido atualizado com sucesso!");
       onUpdated();
-      onClose();
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao salvar alterações");
+      toast.error(e.message ?? "Erro ao salvar alterações.");
     } finally {
       setBusy(false);
     }
+  };
+
+  // Confirmar pagamento manualmente
+  const confirmPayment = async () => {
+    if (!pedido) return;
+    setConfirmingPayment(true);
+    try {
+      const { error } = await supabase.from("pedidos").update({
+        pagamento_confirmado: true,
+      }).eq("id", pedido.id);
+
+      if (error) throw error;
+      toast.success("Pagamento confirmado!");
+      onUpdated();
+    } catch (e: any) {
+      toast.error("Erro ao confirmar pagamento: " + e.message);
+    } finally {
+      setConfirmingPayment(false);
+    }
+  };
+
+  const handlePrintPix = () => {
+    const canvas = document.querySelector("#pix-qrcode canvas") as HTMLCanvasElement;
+    if (!canvas) return;
+    const win = window.open("", "printpix");
+    if (!win) return;
+    win.document.write(`
+      <html>
+        <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
+          <h2>Pagamento PIX - Pedido ${pedido?.numero_pedido}</h2>
+          <img src="${canvas.toDataURL()}" style="width:300px;height:300px;"/>
+          <p style="margin-top:20px;font-size:1.2rem;">Valor: ${fmt(Number(pedido?.total))}</p>
+          <p>Chave: ${storePixKey}</p>
+          <script>setTimeout(() => { window.print(); window.close(); }, 500);</script>
+        </body>
+      </html>
+    `);
   };
 
   const whatsappHref = pedido?.clientes?.telefone
@@ -414,6 +461,25 @@ function PedidoDetail({
 
   return (
     <>
+      {/* QR Code PIX Modal */}
+      <Dialog open={showPix} onOpenChange={setShowPix}>
+        <DialogContent className="max-w-xs text-center">
+          <DialogHeader>
+            <DialogTitle>QR Code PIX</DialogTitle>
+            <DialogDescription>Peça para o cliente escanear o código abaixo</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4" id="pix-qrcode">
+            <QRCodeCanvas value={storePixKey || "Sem chave PIX"} size={220} />
+            <div className="text-sm font-medium">Total: {fmt(Number(pedido?.total))}</div>
+            <div className="text-xs text-muted-foreground break-all">Chave: {storePixKey}</div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="w-full" onClick={handlePrintPix}>
+              <Printer className="h-4 w-4 mr-2" /> Imprimir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Diálogo de confirmação de cancelamento */}
       <Dialog open={confirmCancel} onOpenChange={(o) => !o && setConfirmCancel(false)}>
         <DialogContent className="max-w-sm">
@@ -456,6 +522,11 @@ function PedidoDetail({
                   {pedido.status}
                 </Badge>
               )}
+              {pedido?.pagamento_confirmado && (
+                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Pago
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
 
@@ -475,14 +546,6 @@ function PedidoDetail({
                             {format(new Date(ped.cancelado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                           </span></>
                         )}
-                      </p>
-                    )}
-                    {!ped?.cancelado_por && ped?.cancelado_em && (
-                      <p className="text-muted-foreground mt-0.5">
-                        Cancelado em{" "}
-                        <span className="text-foreground">
-                          {format(new Date(ped.cancelado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </span>
                       </p>
                     )}
                   </div>
@@ -510,12 +573,23 @@ function PedidoDetail({
                   <div className="text-muted-foreground">Endereço</div>
                   <div>{pedido.clientes?.endereco || "—"}</div>
                 </div>
-                {pedido.observacoes_cliente && (
-                  <div className="sm:col-span-2">
-                    <div className="text-muted-foreground">Observações do cliente</div>
-                    <div>{pedido.observacoes_cliente}</div>
+                <div className="sm:col-span-2">
+                  <div className="text-muted-foreground">Forma de Pagamento</div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <Badge variant="secondary" className="px-3 py-1 text-sm">{pedido.forma_pagamento || "Não informada"}</Badge>
+                    {pedido.forma_pagamento === "PIX" && !pedido.pagamento_confirmado && (
+                      <Button size="sm" variant="outline" className="h-8 gap-2 border-accent text-accent hover:bg-accent/10" onClick={() => setShowPix(true)}>
+                        <QrCode className="h-4 w-4" /> Gerar QR Code
+                      </Button>
+                    )}
+                    {!pedido.pagamento_confirmado && (
+                      <Button size="sm" variant="ghost" className="h-8 gap-2 text-green-400 hover:text-green-500 hover:bg-green-500/10" onClick={confirmPayment} disabled={confirmingPayment}>
+                        {confirmingPayment ? <Loader2 className="h-3 w-3 animate-spin"/> : <CheckCircle2 className="h-4 w-4" />}
+                        Confirmar Pagamento
+                      </Button>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Tabela de itens */}
