@@ -50,6 +50,8 @@ export type Pedido = {
   data_entrega: string | null;
   hora_entrega: string | null;
   observacoes_entrega: string | null;
+  cancelado_em?: string | null;
+  cancelado_por?: string | null;
 };
 
 export type ItemPedido = {
