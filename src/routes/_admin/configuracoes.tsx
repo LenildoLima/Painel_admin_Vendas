@@ -10,33 +10,26 @@ import { Loader2, Save, Store, Mail, Phone, QrCode, Truck, Clock } from "lucide-
 
 export const Route = createFileRoute("/_admin/configuracoes")({ component: ConfiguracoesPage });
 
-// Aplica máscara de telefone: (XX) 9XXXX-XXXX ou XX XXXXX-XXXX
+// Aplica máscara de telefone: (00) 00000-0000
 function maskPhone(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 13); // Até 13 dígitos para incluir 55 inicial se houver
+  const digits = value.replace(/\D/g, "").slice(0, 11);
   
   if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 9) return `(${digits.slice(0, 2)}) ${digits.slice(2, 4)} ${digits.slice(4)}`;
-  if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 4)} ${digits.slice(4, 9)}-${digits.slice(9)}`;
-  // Se for com 55: 55 (11) 99999-9999
-  if (digits.startsWith("55") && digits.length >= 13) {
-    return `${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9, 13)}`;
-  }
-  return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
 function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [config, setConfig] = useState({
-    id: "",
     nome_loja: "",
     email_contato: "",
-    whatsapp_fixo: "",
+    telefone_whatsapp: "",
     chave_pix: "",
     taxa_entrega_padrao: 0,
-    horario_abertura: "08:00",
-    horario_fechamento: "22:00",
+    horario_funcionamento_inicio: "08:00",
+    horario_funcionamento_fim: "22:00",
   });
 
   const load = async () => {
@@ -44,16 +37,22 @@ function ConfiguracoesPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from("configuracoes")
-        .select("*")
-        .single();
+        .select("chave, valor");
       
-      if (error && error.code !== "PGRST116") throw error; // PGRST116 means no rows
+      if (error) throw error;
       
       if (data) {
-        setConfig({
-          ...data,
-          whatsapp_fixo: data.whatsapp_fixo ? maskPhone(data.whatsapp_fixo) : ""
+        const mapped: any = { ...config };
+        data.forEach((item: any) => {
+          if (item.chave === "taxa_entrega_padrao") {
+            mapped[item.chave] = Number(item.valor) || 0;
+          } else if (item.chave === "telefone_whatsapp") {
+            mapped[item.chave] = maskPhone(item.valor || "");
+          } else {
+            mapped[item.chave] = item.valor || "";
+          }
         });
+        setConfig(mapped);
       }
     } catch (e: any) {
       toast.error("Erro ao carregar configurações: " + e.message);
@@ -67,23 +66,20 @@ function ConfiguracoesPage() {
   const handleSave = async () => {
     try {
       setBusy(true);
-      const { id, ...data } = config;
       
-      // Limpa máscara antes de salvar
-      const cleanData = {
-        ...data,
-        whatsapp_fixo: data.whatsapp_fixo.replace(/\D/g, "")
-      };
+      const updates = Object.entries(config).map(([chave, valor]) => ({
+        chave,
+        valor: chave === "telefone_whatsapp" ? String(valor).replace(/\D/g, "") : String(valor)
+      }));
 
-      let res;
-      if (id) {
-        res = await supabase.from("configuracoes").update(cleanData).eq("id", id);
-      } else {
-        res = await supabase.from("configuracoes").insert(cleanData);
+      // Upsert individualmente para garantir que funcione se a tabela tiver chave como PK
+      for (const item of updates) {
+        const { error } = await supabase
+          .from("configuracoes")
+          .upsert(item, { onConflict: "chave" });
+        if (error) throw error;
       }
 
-      if (res.error) throw res.error;
-      
       toast.success("Configurações salvas com sucesso!");
       load();
     } catch (e: any) {
@@ -145,12 +141,12 @@ function ConfiguracoesPage() {
             <div className="space-y-2">
               <Label>WhatsApp (Somente números)</Label>
               <Input 
-                value={config.whatsapp_fixo} 
+                value={config.telefone_whatsapp} 
                 onChange={e => {
                   const masked = maskPhone(e.target.value);
-                  setConfig(prev => ({ ...prev, whatsapp_fixo: masked }));
+                  setConfig(prev => ({ ...prev, telefone_whatsapp: masked }));
                 }}
-                placeholder="(11) 9 9999-9999"
+                placeholder="(11) 99999-9999"
               />
             </div>
           </CardContent>
@@ -217,16 +213,16 @@ function ConfiguracoesPage() {
                 <Label>Abertura</Label>
                 <Input 
                   type="time"
-                  value={config.horario_abertura || ""} 
-                  onChange={e => setConfig(prev => ({ ...prev, horario_abertura: e.target.value }))}
+                  value={config.horario_funcionamento_inicio || ""} 
+                  onChange={e => setConfig(prev => ({ ...prev, horario_funcionamento_inicio: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Fechamento</Label>
                 <Input 
                   type="time"
-                  value={config.horario_fechamento || ""} 
-                  onChange={e => setConfig(prev => ({ ...prev, horario_fechamento: e.target.value }))}
+                  value={config.horario_funcionamento_fim || ""} 
+                  onChange={e => setConfig(prev => ({ ...prev, horario_funcionamento_fim: e.target.value }))}
                 />
               </div>
             </div>
