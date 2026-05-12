@@ -24,64 +24,55 @@ const fmt = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency"
 // Gerador de Payload PIX (Padrão BR Code / EMV)
 // --------------------------------------------------------------------------
 function generatePixPayload(chave: string, valor: number, txid: string = "***") {
-  const cleanChaveRaw = chave.trim();
-  const amountStr = Number(valor).toFixed(2).replace(",", ".");
-  
-  // Função auxiliar para sanitizar strings (remover acentos e caracteres especiais)
   const sanitize = (str: string) => str
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^A-Z0-9 ]/gi, "")
-    .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
 
+  function formatField(id: string, value: string): string {
+    const len = value.length.toString().padStart(2, '0');
+    return `${id}${len}${value}`;
+  }
+
+  function crc16(str: string): string {
+    let crc = 0xFFFF;
+    for (let i = 0; i < str.length; i++) {
+      crc ^= str.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+        if (crc & 0x8000) {
+          crc = (crc << 1) ^ 0x1021;
+        } else {
+          crc <<= 1;
+        }
+        crc &= 0xFFFF;
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+
+  const cleanChave = chave.replace(/\s+/g, "");
+  const amountStr = Number(valor).toFixed(2);
   const cleanNome = sanitize("LOJA").substring(0, 25);
   const cleanCidade = sanitize("CIDADE").substring(0, 15);
 
-  // 26: Merchant Account Info (GUI + Chave)
+  let payload = "000201";
   const gui = "0014br.gov.bcb.pix";
-  const cleanChave = cleanChaveRaw.replace(/\s+/g, "");
-  const key = "01" + cleanChave.length.toString().padStart(2, '0') + cleanChave;
-  const merchantAccountInfo = "26" + (gui.length + key.length).toString().padStart(2, '0') + gui + key;
+  const keyField = formatField("01", cleanChave);
+  payload += formatField("26", gui + keyField);
+  payload += "52040000";
+  payload += "5303986";
+  payload += formatField("54", amountStr);
+  payload += "5802BR";
+  payload += formatField("59", cleanNome);
+  payload += formatField("60", cleanCidade);
   
-  const payloadArr = [
-    "000201",                                      // Payload Format Indicator
-    merchantAccountInfo,                            // Merchant Account Info
-    "52040000",                                    // Merchant Category Code
-    "5303986",                                     // Transaction Currency (BRL)
-    "54" + amountStr.length.toString().padStart(2, '0') + amountStr, // Transaction Amount
-    "5802BR",                                      // Country Code
-    "59" + cleanNome.length.toString().padStart(2, '0') + cleanNome, // Merchant Name
-    "60" + cleanCidade.length.toString().padStart(2, '0') + cleanCidade, // Merchant City
-  ];
+  // Tag 62 é obrigatória para muitos aplicativos de banco
+  payload += formatField("62", formatField("05", txid));
 
-  if (txid && txid !== "***") {
-    const cleanId = txid.replace(/[^A-Z0-9]/gi, "").substring(0, 25);
-    if (cleanId) {
-      payloadArr.push("62" + (cleanId.length + 4).toString().padStart(2, '0') + "05" + cleanId.length.toString().padStart(2, '0') + cleanId);
-    }
-  }
-
-  payloadArr.push("6304"); // CRC16 Indicator
-
-  let res = payloadArr.join("");
-  
-  // Cálculo do CRC16 (CCITT-FALSE 0xFFFF)
-  let crc = 0xFFFF;
-  for (let i = 0; i < res.length; i++) {
-    crc ^= (res.charCodeAt(i) << 8);
-    for (let j = 0; j < 8; j++) {
-      if ((crc & 0x8000) !== 0) {
-        crc = (crc << 1) ^ 0x1021;
-      } else {
-        crc <<= 1;
-      }
-      crc &= 0xFFFF; // Masking inside loop
-    }
-  }
-  const crcFinal = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-  const payload = res + crcFinal;
+  payload += "6304";
+  payload += crc16(payload);
   
   return payload;
 }

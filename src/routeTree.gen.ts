@@ -13,12 +13,14 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminVendasBalcaoRouteImport } from './routes/_admin/vendas-balcao'
 import { Route as AdminProdutosRouteImport } from './routes/_admin/produtos'
 import { Route as AdminPedidosRouteImport } from './routes/_admin/pedidos'
 import { Route as AdminEntradaProdutosRouteImport } from './routes/_admin/entrada-produtos'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 import { Route as AdminConfiguracoesRouteImport } from './routes/_admin/configuracoes'
 import { Route as AdminClientesRouteImport } from './routes/_admin/clientes'
+import { Route as AdminBalcaoRouteImport } from './routes/_admin/balcao'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -38,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVendasBalcaoRoute = AdminVendasBalcaoRouteImport.update({
+  id: '/vendas-balcao',
+  path: '/vendas-balcao',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminProdutosRoute = AdminProdutosRouteImport.update({
   id: '/produtos',
@@ -69,28 +76,37 @@ const AdminClientesRoute = AdminClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBalcaoRoute = AdminBalcaoRouteImport.update({
+  id: '/balcao',
+  path: '/balcao',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
+  '/balcao': typeof AdminBalcaoRoute
   '/clientes': typeof AdminClientesRoute
   '/configuracoes': typeof AdminConfiguracoesRoute
   '/dashboard': typeof AdminDashboardRoute
   '/entrada-produtos': typeof AdminEntradaProdutosRoute
   '/pedidos': typeof AdminPedidosRoute
   '/produtos': typeof AdminProdutosRoute
+  '/vendas-balcao': typeof AdminVendasBalcaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
+  '/balcao': typeof AdminBalcaoRoute
   '/clientes': typeof AdminClientesRoute
   '/configuracoes': typeof AdminConfiguracoesRoute
   '/dashboard': typeof AdminDashboardRoute
   '/entrada-produtos': typeof AdminEntradaProdutosRoute
   '/pedidos': typeof AdminPedidosRoute
   '/produtos': typeof AdminProdutosRoute
+  '/vendas-balcao': typeof AdminVendasBalcaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,12 +114,14 @@ export interface FileRoutesById {
   '/_admin': typeof AdminRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
+  '/_admin/balcao': typeof AdminBalcaoRoute
   '/_admin/clientes': typeof AdminClientesRoute
   '/_admin/configuracoes': typeof AdminConfiguracoesRoute
   '/_admin/dashboard': typeof AdminDashboardRoute
   '/_admin/entrada-produtos': typeof AdminEntradaProdutosRoute
   '/_admin/pedidos': typeof AdminPedidosRoute
   '/_admin/produtos': typeof AdminProdutosRoute
+  '/_admin/vendas-balcao': typeof AdminVendasBalcaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,35 +129,41 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/login'
+    | '/balcao'
     | '/clientes'
     | '/configuracoes'
     | '/dashboard'
     | '/entrada-produtos'
     | '/pedidos'
     | '/produtos'
+    | '/vendas-balcao'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/cadastro'
     | '/login'
+    | '/balcao'
     | '/clientes'
     | '/configuracoes'
     | '/dashboard'
     | '/entrada-produtos'
     | '/pedidos'
     | '/produtos'
+    | '/vendas-balcao'
   id:
     | '__root__'
     | '/'
     | '/_admin'
     | '/cadastro'
     | '/login'
+    | '/_admin/balcao'
     | '/_admin/clientes'
     | '/_admin/configuracoes'
     | '/_admin/dashboard'
     | '/_admin/entrada-produtos'
     | '/_admin/pedidos'
     | '/_admin/produtos'
+    | '/_admin/vendas-balcao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -178,6 +202,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_admin/vendas-balcao': {
+      id: '/_admin/vendas-balcao'
+      path: '/vendas-balcao'
+      fullPath: '/vendas-balcao'
+      preLoaderRoute: typeof AdminVendasBalcaoRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_admin/produtos': {
       id: '/_admin/produtos'
@@ -221,25 +252,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/balcao': {
+      id: '/_admin/balcao'
+      path: '/balcao'
+      fullPath: '/balcao'
+      preLoaderRoute: typeof AdminBalcaoRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminBalcaoRoute: typeof AdminBalcaoRoute
   AdminClientesRoute: typeof AdminClientesRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEntradaProdutosRoute: typeof AdminEntradaProdutosRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
   AdminProdutosRoute: typeof AdminProdutosRoute
+  AdminVendasBalcaoRoute: typeof AdminVendasBalcaoRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBalcaoRoute: AdminBalcaoRoute,
   AdminClientesRoute: AdminClientesRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEntradaProdutosRoute: AdminEntradaProdutosRoute,
   AdminPedidosRoute: AdminPedidosRoute,
   AdminProdutosRoute: AdminProdutosRoute,
+  AdminVendasBalcaoRoute: AdminVendasBalcaoRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
