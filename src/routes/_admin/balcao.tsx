@@ -26,7 +26,8 @@ import {
   QrCode,
   CreditCard,
   Banknote,
-  Smartphone
+  Smartphone,
+  Package
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
@@ -470,7 +471,7 @@ function BalcaoPage() {
 
       <div className="flex flex-col lg:flex-row flex-1 gap-4 overflow-hidden min-h-0 relative">
         <div className="flex-1 lg:flex-[3] flex flex-col gap-4 min-w-0 pb-20 lg:pb-0">
-          {filtered.length === 0 && (
+          {filteredProducts.length === 0 && (
              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center bg-card rounded-xl border border-border/40">
                <Package className="h-12 w-12 mb-4 opacity-20" />
                <p className="text-lg font-bold">Nenhum produto encontrado</p>
@@ -480,8 +481,8 @@ function BalcaoPage() {
 
           <ScrollArea className="flex-1 -mr-4 pr-4">
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 pb-4">
-              {filtered.map((p) => {
-                const qtyInCart = getCartQty(p.id);
+              {filteredProducts.map((p) => {
+                const qtyInCart = getItemQuantity(p.id);
                 return (
                   <div 
                     key={p.id} 
@@ -517,7 +518,7 @@ function BalcaoPage() {
                     <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-3 relative z-10" onClick={(e) => e.stopPropagation()}>
                       <div>
                         <h3 className="font-bold text-base line-clamp-2 leading-tight">{p.nome}</h3>
-                        <p className="text-xs text-muted-foreground mt-1.5 uppercase font-semibold tracking-wider p-category opacity-70 line-clamp-1">{catName(p.categoria_id)}</p>
+                        <p className="text-xs text-muted-foreground mt-1.5 uppercase font-semibold tracking-wider p-category opacity-70 line-clamp-1">{p.descricao || "Produto"}</p>
                       </div>
                       
                       <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-1 sm:p-1.5 mt-1 border border-border/30">
