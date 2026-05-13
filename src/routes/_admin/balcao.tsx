@@ -40,6 +40,13 @@ import {
   DialogFooter,
   DialogDescription
 } from "@/components/ui/dialog";
+import { 
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle
+} from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_admin/balcao")({
   component: BalcaoPage,
@@ -321,90 +328,219 @@ function BalcaoPage() {
     });
   };
 
-  return (
-    <div className={cn("flex flex-col h-full bg-background", isFullscreen && "fixed inset-0 z-50 p-4")}>
-      {/* Header Bar */}
-      <div className="flex items-center justify-between mb-4 bg-card p-4 rounded-xl border border-border/40 shadow-sm">
-        <div className="flex items-center gap-4">
+  const renderCartContent = () => (
+    <div className="flex flex-col h-full bg-card">
+      <CardHeader className="py-4 px-6 border-b border-border/20 flex-none bg-card">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-primary/10 p-2 rounded-full"><Clock className="h-4 w-4 text-primary" /></div>
-            <p className="text-lg font-mono font-bold">{now.toLocaleTimeString("pt-BR")}</p>
+            <div className="bg-primary/10 p-2 rounded-lg text-primary"><ShoppingCart className="h-5 w-5" /></div>
+            <CardTitle className="text-xl">Carrinho</CardTitle>
           </div>
-          <div className="h-4 w-[1px] bg-border mx-2" />
-          <h1 className="text-xl font-black uppercase tracking-tight text-primary">Vendas de Balcão</h1>
+          <Badge variant="secondary" className="h-6 px-2">{cart.length} itens</Badge>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Tela Cheia (F11)">
-            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+      </CardHeader>
+      
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-3 py-4 bg-transparent">
+          {cart.map((item) => (
+            <div key={item.produto.id} className="bg-secondary/20 p-3 rounded-lg group animate-in slide-in-from-right-2 duration-200 border border-border/5">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <p className="font-bold text-xs leading-tight line-clamp-2 flex-1">{item.produto.nome}</p>
+                <button 
+                  onClick={() => removeFromCart(item.produto.id)}
+                  className="p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center bg-background rounded-md border border-border/40 p-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-6 md:w-6" onClick={() => updateQuantity(item.produto, -1)}><Minus className="h-4 w-4 md:h-3 md:w-3" /></Button>
+                  <span className="w-10 md:w-8 text-center text-sm md:text-xs font-bold">{item.quantidade}</span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-6 md:w-6" onClick={() => updateQuantity(item.produto, 1)} disabled={item.quantidade >= item.produto.quantidade_estoque}><Plus className="h-4 w-4 md:h-3 md:w-3" /></Button>
+                </div>
+                <p className="font-bold text-sm text-primary">{fmt(item.produto.preco * item.quantidade)}</p>
+              </div>
+            </div>
+          ))}
+          {cart.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40 text-center">
+              <ShoppingCart className="h-16 w-16 mb-4 opacity-10" />
+              <p className="text-sm font-medium">Carrinho vazio</p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+
+      <div className="p-4 bg-secondary/30 flex-none border-t border-border/20 space-y-4">
+        <div className="space-y-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Forma de Pagamento</p>
+          <RadioGroup 
+            value={paymentMethod} 
+            onValueChange={(v: any) => {
+              setPaymentMethod(v);
+              setPixConfirmed(false);
+              if (v === "PIX") {
+                loadPixConfig();
+              }
+            }}
+            className="grid grid-cols-2 gap-2"
+          >
+            {[
+              { id: "Dinheiro", icon: Banknote, label: "Dinheiro" },
+              { id: "PIX", icon: Smartphone, label: "PIX" },
+              { id: "Débito", icon: CreditCard, label: "Débito" },
+              { id: "Crédito", icon: CreditCard, label: "Crédito" },
+            ].map((m) => (
+              <div key={m.id}>
+                <RadioGroupItem value={m.id} id={m.id} className="peer sr-only" />
+                <Label
+                  htmlFor={m.id}
+                  className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                >
+                  <m.icon className="mb-1 h-4 w-4" />
+                  <span className="text-[10px] font-bold uppercase">{m.label}</span>
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-black uppercase tracking-tight">Total</span>
+            <span className="text-2xl font-black text-primary font-mono">{fmt(subtotal)}</span>
+          </div>
+          {paymentMethod === "PIX" && (
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase">
+              {pixConfirmed ? (
+                <span className="text-green-500 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> PIX Confirmado</span>
+              ) : (
+                <span className="text-yellow-500 flex items-center gap-1"><QrCode className="h-3 w-3" /> Aguardando PIX</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-2 text-white">
+          <Button 
+            onClick={finalizarVenda}
+            disabled={cart.length === 0 || busy || (paymentMethod === "PIX" && !pixConfirmed)} 
+            className="h-14 text-lg font-black uppercase tracking-wider shadow-lg shadow-primary/20 active:scale-95 transition-all"
+          >
+            {busy ? <Loader2 className="h-6 w-6 animate-spin" /> : "FINALIZAR (ENTER)"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={clearCart} disabled={cart.length === 0} className="h-10 text-xs font-bold gap-2">
+            <Trash2 className="h-4 w-4" /> LIMPAR (ESC)
           </Button>
         </div>
       </div>
+    </div>
+  );
 
-      <div className="flex flex-col lg:flex-row flex-1 gap-4 overflow-hidden min-h-0">
-        {/* Products Grid */}
-        <div className="flex-1 lg:flex-[3] flex flex-col gap-4 min-w-0 pb-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+  return (
+    <div className={cn("flex flex-col h-full bg-background", isFullscreen && "fixed inset-0 z-50 p-4")}>
+      <div className="flex flex-row items-center justify-between gap-3 mb-4 bg-card p-4 rounded-xl border border-border/40 shadow-sm">
+        <div className="flex items-center gap-2 lg:gap-4">
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-full"><Clock className="h-4 w-4 text-primary" /></div>
+            <p className="text-lg font-mono font-bold">{now.toLocaleTimeString("pt-BR")}</p>
+          </div>
+          <div className="hidden sm:block h-4 w-[1px] bg-border mx-2" />
+          <div>
+            <h1 className="text-xl md:text-3xl font-black uppercase tracking-tight text-primary leading-none">Balcão</h1>
+            <p className="text-muted-foreground font-medium text-xs md:text-sm hidden sm:block">Ponto de Venda</p>
+          </div>
+        </div>
+        <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             <Input 
-              placeholder="Buscar produto..." 
-              className="pl-10 h-14 text-lg bg-card border-border/50 focus:border-primary/50 rounded-xl" 
-
+              placeholder="Buscar..." 
+              className="pl-9 md:pl-10 h-10 md:h-12 text-sm md:text-lg bg-card border-border/50 focus:border-primary/50 xl:rounded-xl rounded-full shadow-sm" 
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-          </div>
+        </div>
+        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Tela Cheia (F11)" className="hidden lg:flex">
+          {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+        </Button>
+      </div>
 
-          <ScrollArea className="flex-1">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pr-4 pb-4">
-              {loading ? (
-                Array.from({ length: 15 }).map((_, i) => (
-                  <div key={i} className="h-48 rounded-xl bg-card animate-pulse border border-border/20" />
-                ))
-              ) : filteredProducts.map((p, index) => {
-                const qtyInCart = getItemQuantity(p.id);
+      <div className="flex flex-col lg:flex-row flex-1 gap-4 overflow-hidden min-h-0 relative">
+        <div className="flex-1 lg:flex-[3] flex flex-col gap-4 min-w-0 pb-20 lg:pb-0">
+          {filtered.length === 0 && (
+             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center bg-card rounded-xl border border-border/40">
+               <Package className="h-12 w-12 mb-4 opacity-20" />
+               <p className="text-lg font-bold">Nenhum produto encontrado</p>
+               <p className="text-sm">Tente ajustar sua busca ou categoria.</p>
+             </div>
+          )}
+
+          <ScrollArea className="flex-1 -mr-4 pr-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 pb-4">
+              {filtered.map((p) => {
+                const qtyInCart = getCartQty(p.id);
                 return (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "flex flex-col items-center p-4 rounded-xl border transition-all text-center relative overflow-hidden group",
-                      p.quantidade_estoque <= 0 
-                        ? "bg-muted/50 border-border opacity-60" 
-                        : "bg-card border-border/40 hover:border-primary/50 hover:shadow-md"
-                    )}
+                  <div 
+                    key={p.id} 
+                    className="flex flex-col bg-card rounded-2xl border-2 border-border/40 overflow-hidden shadow-sm hover:border-primary/50 transition-all hover:shadow-md cursor-pointer group"
+                    onClick={() => {
+                        if (qtyInCart < p.quantidade_estoque) {
+                            updateQuantity(p, 1);
+                        }
+                    }}
                   >
-                    {p.imagem_url && (
-                      <img src={p.imagem_url} alt={p.nome} className="absolute inset-x-0 top-0 w-full h-20 object-cover opacity-[0.05] pointer-events-none" />
-                    )}
-
-                    <div className="flex-1 flex flex-col items-center justify-center gap-1 z-10 pt-4">
-                      <p className="font-bold text-sm line-clamp-2 uppercase tracking-tighter leading-tight min-h-[2.5rem]">{p.nome}</p>
-                      <p className="text-xl font-black text-primary">{fmt(p.preco)}</p>
-                      <p className={cn("text-[10px] font-bold uppercase", p.quantidade_estoque <= 5 ? "text-yellow-500" : "text-muted-foreground")}>
-                        Estoque: {p.quantidade_estoque}
-                      </p>
+                    <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+                      {p.imagem_url ? (
+                        <img src={p.imagem_url} alt={p.nome} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Package className="h-10 w-10 text-muted-foreground/30" />
+                        </div>
+                      )}
+                      {p.quantidade_estoque <= 5 && p.quantidade_estoque > 0 && (
+                        <Badge className="absolute top-2 right-2 bg-yellow-500 text-white font-bold border-0 shadow-sm">
+                          Restam {p.quantidade_estoque}
+                        </Badge>
+                      )}
+                      {p.quantidade_estoque === 0 && (
+                        <div className="absolute inset-0 bg-background/80 flex items-center justify-center backdrop-blur-sm">
+                          <Badge variant="destructive" className="font-bold text-sm px-3 shadow-lg">Esgotado</Badge>
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2">
+                        <Badge variant="secondary" className="bg-background/90 backdrop-blur-md font-bold shadow-sm">{fmt(p.preco)}</Badge>
+                      </div>
                     </div>
-
-                    <div className="w-full mt-4 flex items-center justify-between bg-secondary/50 rounded-lg p-1 z-10">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 md:h-8 md:w-8 rounded-md hover:bg-background"
-                        onClick={() => updateQuantity(p, -1)}
-                        disabled={qtyInCart <= 0}
-                      >
-                        <Minus className="h-5 w-5 md:h-4 md:w-4" />
-                      </Button>
-                      <span className="font-bold text-base md:text-sm min-w-[20px]">{qtyInCart}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 md:h-8 md:w-8 rounded-md hover:bg-background"
-                        onClick={() => updateQuantity(p, 1)}
-                        disabled={qtyInCart >= p.quantidade_estoque}
-                      >
-                        <Plus className="h-5 w-5 md:h-4 md:w-4" />
-                      </Button>
+                    <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-3 relative z-10" onClick={(e) => e.stopPropagation()}>
+                      <div>
+                        <h3 className="font-bold text-base line-clamp-2 leading-tight">{p.nome}</h3>
+                        <p className="text-xs text-muted-foreground mt-1.5 uppercase font-semibold tracking-wider p-category opacity-70 line-clamp-1">{catName(p.categoria_id)}</p>
+                      </div>
+                      
+                      <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-1 sm:p-1.5 mt-1 border border-border/30">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 md:h-8 md:w-8 rounded-md hover:bg-background"
+                          onClick={() => updateQuantity(p, -1)}
+                          disabled={qtyInCart <= 0}
+                        >
+                          <Minus className="h-5 w-5 md:h-4 md:w-4" />
+                        </Button>
+                        <span className="font-bold text-base md:text-sm min-w-[20px] text-center">{qtyInCart}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 md:h-8 md:w-8 rounded-md hover:bg-background"
+                          onClick={() => updateQuantity(p, 1)}
+                          disabled={qtyInCart >= p.quantidade_estoque}
+                        >
+                          <Plus className="h-5 w-5 md:h-4 md:w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -414,116 +550,31 @@ function BalcaoPage() {
         </div>
 
         {/* Cart */}
-        <Card className="flex-none h-[45vh] lg:h-auto lg:flex-[1.2] flex flex-col bg-card border-border/40 shadow-xl lg:min-w-[320px]">
-          <CardHeader className="py-4 px-6 border-b border-border/20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="bg-primary/10 p-2 rounded-lg text-primary"><ShoppingCart className="h-5 w-5" /></div>
-                <CardTitle className="text-xl">Carrinho</CardTitle>
-              </div>
-              <Badge variant="secondary" className="h-6 px-2">{cart.length} itens</Badge>
-            </div>
-          </CardHeader>
-          
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-3 py-4">
-              {cart.map((item) => (
-                <div key={item.produto.id} className="bg-secondary/20 p-3 rounded-lg group animate-in slide-in-from-right-2 duration-200 border border-border/5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="font-bold text-xs leading-tight line-clamp-2 flex-1">{item.produto.nome}</p>
-                    <button 
-                      onClick={() => removeFromCart(item.produto.id)}
-                      className="p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded transition-colors"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center bg-background rounded-md border border-border/40 p-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 md:h-6 md:w-6" onClick={() => updateQuantity(item.produto, -1)}><Minus className="h-4 w-4 md:h-3 md:w-3" /></Button>
-                      <span className="w-10 md:w-8 text-center text-sm md:text-xs font-bold">{item.quantidade}</span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 md:h-6 md:w-6" onClick={() => updateQuantity(item.produto, 1)} disabled={item.quantidade >= item.produto.quantidade_estoque}><Plus className="h-4 w-4 md:h-3 md:w-3" /></Button>
-                    </div>
-                    <p className="font-bold text-sm text-primary">{fmt(item.produto.preco * item.quantidade)}</p>
-                  </div>
-                </div>
-              ))}
-              {cart.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40 text-center">
-                  <ShoppingCart className="h-16 w-16 mb-4 opacity-10" />
-                  <p className="text-sm font-medium">Carrinho vazio</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          <div className="p-4 bg-secondary/30 mt-auto border-t border-border/20 space-y-4">
-            <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Forma de Pagamento</p>
-              <RadioGroup 
-                value={paymentMethod} 
-                onValueChange={(v: any) => {
-                  setPaymentMethod(v);
-                  setPixConfirmed(false);
-                  if (v === "PIX") {
-                    loadPixConfig();
-                  }
-                }}
-                className="grid grid-cols-2 gap-2"
-              >
-                {[
-                  { id: "Dinheiro", icon: Banknote, label: "Dinheiro" },
-                  { id: "PIX", icon: Smartphone, label: "PIX" },
-                  { id: "Débito", icon: CreditCard, label: "Débito" },
-                  { id: "Crédito", icon: CreditCard, label: "Crédito" },
-                ].map((m) => (
-                  <div key={m.id}>
-                    <RadioGroupItem value={m.id} id={m.id} className="peer sr-only" />
-                    <Label
-                      htmlFor={m.id}
-                      className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
-                    >
-                      <m.icon className="mb-1 h-4 w-4" />
-                      <span className="text-[10px] font-bold uppercase">{m.label}</span>
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-
-            <Separator className="bg-border/20" />
-
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-black uppercase tracking-tight">Total</span>
-                <span className="text-2xl font-black text-primary font-mono">{fmt(subtotal)}</span>
-              </div>
-              {paymentMethod === "PIX" && (
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase">
-                  {pixConfirmed ? (
-                    <span className="text-green-500 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> PIX Confirmado</span>
-                  ) : (
-                    <span className="text-yellow-500 flex items-center gap-1"><QrCode className="h-3 w-3" /> Aguardando PIX</span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="grid gap-2 text-white">
-              <Button 
-                onClick={finalizarVenda}
-                disabled={cart.length === 0 || busy || (paymentMethod === "PIX" && !pixConfirmed)} 
-                className="h-14 text-lg font-black uppercase tracking-wider shadow-lg shadow-primary/20 active:scale-95 transition-all"
-              >
-                {busy ? <Loader2 className="h-6 w-6 animate-spin" /> : "FINALIZAR (ENTER)"}
-              </Button>
-              <Button variant="outline" size="sm" onClick={clearCart} disabled={cart.length === 0} className="h-10 text-xs font-bold gap-2">
-                <Trash2 className="h-4 w-4" /> LIMPAR (ESC)
-              </Button>
-            </div>
-          </div>
+        <Card className="hidden lg:flex flex-none h-[45vh] lg:h-auto lg:flex-[1.2] flex-col bg-card border-border/40 shadow-xl overflow-hidden lg:min-w-[320px]">
+          {renderCartContent()}
         </Card>
       </div>
+
+      {/* Mobile Floating Cart Button */}
+      {cart.length > 0 && (
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-[50]">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button className="w-full h-16 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white shadow-[0_10px_40px_-5px_rgba(249,115,22,0.6)] flex items-center justify-between px-6 pointer-events-auto border-2 border-orange-400/50">
+                <div className="flex items-center gap-3">
+                  <ShoppingCart className="h-6 w-6" />
+                  <span className="font-extrabold text-lg sm:text-xl text-left">Ver Carrinho ({cart.length})</span>
+                </div>
+                <span className="font-black text-xl sm:text-2xl">{fmt(subtotal)}</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col rounded-t-3xl gap-0 bg-background sm:max-w-md sm:mx-auto sm:right-auto border-t-2 border-border/50 overflow-hidden">
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-muted rounded-full opacity-50 z-50"></div>
+              {renderCartContent()}
+            </SheetContent>
+          </Sheet>
+        </div>
+      )}
 
       {/* PIX Dialog */}
       <Dialog open={showPixDialog} onOpenChange={setShowPixDialog}>
