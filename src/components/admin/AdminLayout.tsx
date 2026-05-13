@@ -119,11 +119,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                     "flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors",
                     Active
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      : "text-muted-foreground hover:bg-[#00D9FF]/10 hover:text-[#00D9FF]"
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <n.icon className="h-4 w-4" />
+                    <n.icon className={cn("h-4 w-4", Active ? "text-primary-foreground" : "text-[#00D9FF]")} />
                     {n.label}
                   </div>
                   {n.label === "Pedidos" && pendingCount > 0 && (
@@ -163,11 +163,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                             "flex items-center justify-between rounded-md px-3 py-3 text-base font-medium transition-colors",
                             Active
                               ? "bg-primary text-primary-foreground"
-                              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                              : "text-muted-foreground hover:bg-[#00D9FF]/10 hover:text-[#00D9FF]"
                           )}
                         >
                           <div className="flex items-center gap-3">
-                            <n.icon className="h-5 w-5" />
+                            <n.icon className={cn("h-5 w-5", Active ? "text-primary-foreground" : "text-[#00D9FF]")} />
                             {n.label}
                           </div>
                           {n.label === "Pedidos" && pendingCount > 0 && (
