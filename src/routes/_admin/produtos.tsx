@@ -222,12 +222,12 @@ function ProdutoFormDialog({ mode, cats, onClose, onSaved }: { mode: Mode; cats:
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto p-4 sm:p-6 pt-10">
         <DialogHeader>
           <DialogTitle>{isView ? "Detalhes do Produto" : initial ? "Editar Produto" : "Novo Produto"}</DialogTitle>
           <DialogDescription className="sr-only">Formulário para gerenciar informações do produto no catálogo.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-5 mt-2">
           <div className="sm:col-span-2 space-y-4">
             <Label>Imagem do Produto</Label>
             <div className="flex flex-col sm:flex-row items-start gap-4">
@@ -248,14 +248,14 @@ function ProdutoFormDialog({ mode, cats, onClose, onSaved }: { mode: Mode; cats:
               </div>
               
               {!isView && (
-                <div className="flex flex-col gap-2 w-full sm:w-auto">
-                  <label className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md cursor-pointer hover:bg-primary/90 transition-colors text-sm font-medium">
+                <div className="flex flex-col gap-3 w-full sm:w-auto">
+                  <label className="flex items-center justify-center gap-2 px-4 h-12 sm:h-10 bg-primary text-primary-foreground rounded-md cursor-pointer hover:bg-primary/90 transition-colors text-base sm:text-sm font-medium">
                     <Upload className="h-4 w-4" />
                     Carregar Imagem
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   </label>
                   
-                  <label className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md cursor-pointer hover:bg-secondary/80 transition-colors text-sm font-medium">
+                  <label className="flex items-center justify-center gap-2 px-4 h-12 sm:h-10 bg-secondary text-secondary-foreground rounded-md cursor-pointer hover:bg-secondary/80 transition-colors text-base sm:text-sm font-medium">
                     <Camera className="h-4 w-4" />
                     Tirar Foto
                     <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
@@ -278,29 +278,29 @@ function ProdutoFormDialog({ mode, cats, onClose, onSaved }: { mode: Mode; cats:
           </div>
 
           <div className="sm:col-span-2 space-y-2">
-            <Label>Nome</Label>
-            <Input value={form.nome ?? ""} disabled={isView} onChange={(e) => set("nome", e.target.value)} />
+            <Label className="text-base sm:text-sm">Nome</Label>
+            <Input className="h-12 sm:h-10 text-base" value={form.nome ?? ""} disabled={isView} onChange={(e) => set("nome", e.target.value)} />
           </div>
           <div className="sm:col-span-2 space-y-2">
-            <Label>Descrição</Label>
-            <Textarea value={form.descricao ?? ""} disabled={isView} onChange={(e) => set("descricao", e.target.value)} />
+            <Label className="text-base sm:text-sm">Descrição</Label>
+            <Textarea className="min-h-[100px] text-base" value={form.descricao ?? ""} disabled={isView} onChange={(e) => set("descricao", e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Categoria</Label>
+            <Label className="text-base sm:text-sm">Categoria</Label>
             <Select value={form.categoria_id ?? undefined} onValueChange={(v) => set("categoria_id", v)} disabled={isView}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectTrigger className="h-12 sm:h-10 text-base"><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
                 {cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Preço (R$)</Label>
-            <Input type="number" step="0.01" value={form.preco ?? 0} disabled={isView} onChange={(e) => set("preco", e.target.value)} />
+            <Label className="text-base sm:text-sm">Preço (R$)</Label>
+            <Input className="h-12 sm:h-10 text-base" type="number" step="0.01" value={form.preco ?? 0} disabled={isView} onChange={(e) => set("preco", e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Estoque</Label>
-            <Input type="number" value={form.quantidade_estoque ?? 0} readOnly className="bg-muted/50" />
+            <Label className="text-base sm:text-sm">Estoque</Label>
+            <Input className="h-12 sm:h-10 text-base bg-muted/50" type="number" value={form.quantidade_estoque ?? 0} readOnly />
             <p className="text-[10px] text-yellow-500 italic">Atualizar em Entrada de Produtos</p>
           </div>
           <div className="flex items-center gap-3">
@@ -308,9 +308,9 @@ function ProdutoFormDialog({ mode, cats, onClose, onSaved }: { mode: Mode; cats:
             <Label>Ativo</Label>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{isView ? "Fechar" : "Cancelar"}</Button>
-          {!isView && <Button onClick={save} disabled={busy}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Salvar</Button>}
+        <DialogFooter className="mt-4 gap-3 sm:gap-2">
+          <Button className="h-12 sm:h-10 w-full sm:w-auto" variant="outline" onClick={onClose}>{isView ? "Fechar" : "Cancelar"}</Button>
+          {!isView && <Button className="h-12 sm:h-10 w-full sm:w-auto text-base sm:text-sm" onClick={save} disabled={busy}>{busy && <Loader2 className="h-5 w-5 mr-2 animate-spin" />} Salvar Produto</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

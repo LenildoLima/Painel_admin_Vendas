@@ -341,14 +341,15 @@ function BalcaoPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 gap-4 overflow-hidden min-h-0">
+      <div className="flex flex-col lg:flex-row flex-1 gap-4 overflow-hidden min-h-0">
         {/* Products Grid */}
-        <div className="flex-[3] flex flex-col gap-4 min-w-0">
+        <div className="flex-1 lg:flex-[3] flex flex-col gap-4 min-w-0 pb-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
-              placeholder="Buscar produto por nome ou descrição..." 
-              className="pl-10 h-12 text-lg bg-card border-border/50 focus:border-primary/50" 
+              placeholder="Buscar produto..." 
+              className="pl-10 h-14 text-lg bg-card border-border/50 focus:border-primary/50 rounded-xl" 
+
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -388,21 +389,21 @@ function BalcaoPage() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-background"
+                        className="h-10 w-10 md:h-8 md:w-8 rounded-md hover:bg-background"
                         onClick={() => updateQuantity(p, -1)}
                         disabled={qtyInCart <= 0}
                       >
-                        <Minus className="h-4 w-4" />
+                        <Minus className="h-5 w-5 md:h-4 md:w-4" />
                       </Button>
-                      <span className="font-bold text-sm min-w-[20px]">{qtyInCart}</span>
+                      <span className="font-bold text-base md:text-sm min-w-[20px]">{qtyInCart}</span>
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-background"
+                        className="h-10 w-10 md:h-8 md:w-8 rounded-md hover:bg-background"
                         onClick={() => updateQuantity(p, 1)}
                         disabled={qtyInCart >= p.quantidade_estoque}
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-5 w-5 md:h-4 md:w-4" />
                       </Button>
                     </div>
                   </div>
@@ -413,7 +414,7 @@ function BalcaoPage() {
         </div>
 
         {/* Cart */}
-        <Card className="flex-[1.2] flex flex-col bg-card border-border/40 shadow-xl min-w-[320px]">
+        <Card className="flex-none h-[45vh] lg:h-auto lg:flex-[1.2] flex flex-col bg-card border-border/40 shadow-xl lg:min-w-[320px]">
           <CardHeader className="py-4 px-6 border-b border-border/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -437,11 +438,11 @@ function BalcaoPage() {
                       <X className="h-3 w-3" />
                     </button>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center bg-background rounded-md border border-border/40 p-0.5">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.produto, -1)}><Minus className="h-3 w-3" /></Button>
-                      <span className="w-8 text-center text-xs font-bold">{item.quantidade}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.produto, 1)} disabled={item.quantidade >= item.produto.quantidade_estoque}><Plus className="h-3 w-3" /></Button>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center bg-background rounded-md border border-border/40 p-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 md:h-6 md:w-6" onClick={() => updateQuantity(item.produto, -1)}><Minus className="h-4 w-4 md:h-3 md:w-3" /></Button>
+                      <span className="w-10 md:w-8 text-center text-sm md:text-xs font-bold">{item.quantidade}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 md:h-6 md:w-6" onClick={() => updateQuantity(item.produto, 1)} disabled={item.quantidade >= item.produto.quantidade_estoque}><Plus className="h-4 w-4 md:h-3 md:w-3" /></Button>
                     </div>
                     <p className="font-bold text-sm text-primary">{fmt(item.produto.preco * item.quantidade)}</p>
                   </div>

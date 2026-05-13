@@ -2,8 +2,9 @@ import { ReactNode, useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { LayoutDashboard, Package, ShoppingCart, LogOut, ArrowDownToLine, Users, Settings, History } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, LogOut, ArrowDownToLine, Users, Settings, History, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -139,26 +140,60 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
         {!isFullscreen && (
           <header className="h-14 flex items-center justify-between border-b border-border px-4 md:px-6 bg-card/50">
-            <div className="md:hidden font-bold">Vendas<span className="text-primary">.</span>Admin</div>
+            <div className="flex items-center gap-3 md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+                  <div className="px-6 py-5 border-b border-border">
+                    <SheetTitle className="text-lg font-bold tracking-tight">Vendas<span className="text-primary">.</span>Admin</SheetTitle>
+                    <SheetDescription className="sr-only">Menu de navegação mobile</SheetDescription>
+                  </div>
+                  <nav className="flex-1 p-3 space-y-1 overflow-auto">
+                    {NAV.map((n) => {
+                      const Active = loc.pathname.startsWith(n.to);
+                      return (
+                        <Link
+                          key={n.to}
+                          to={n.to}
+                          className={cn(
+                            "flex items-center justify-between rounded-md px-3 py-3 text-base font-medium transition-colors",
+                            Active
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <n.icon className="h-5 w-5" />
+                            {n.label}
+                          </div>
+                          {n.label === "Pedidos" && pendingCount > 0 && (
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground animate-pulse">
+                              {pendingCount}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+              <div className="font-bold">Vendas<span className="text-primary">.</span>Admin</div>
+            </div>
+            
             <div className="flex-1 md:flex hidden" />
             <div className="flex items-center gap-3">
               <div className="text-sm text-muted-foreground hidden sm:block">{email}</div>
               <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" /> Sair
+                <LogOut className="h-4 w-4 mr-2" /> <span className="hidden sm:inline">Sair</span>
               </Button>
             </div>
           </header>
         )}
         <main className={cn("flex-1 p-4 md:p-6 overflow-auto", isFullscreen && "p-0 md:p-0")}>{children}</main>
-        {!isFullscreen && (
-          <nav className="md:hidden border-t border-border bg-sidebar grid grid-cols-3">
-            {NAV.map((n) => (
-              <Link key={n.to} to={n.to} className="flex flex-col items-center gap-1 py-2 text-xs text-muted-foreground">
-                <n.icon className="h-4 w-4" /> {n.label}
-              </Link>
-            ))}
-          </nav>
-        )}
       </div>
     </div>
   );

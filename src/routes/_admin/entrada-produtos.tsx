@@ -248,7 +248,7 @@ function EntradaProdutosPage() {
             <Input placeholder="Buscar por produto ou ref..." className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
 
-          <div className="rounded-md border border-border overflow-x-auto">
+          <div className="hidden md:block rounded-md border border-border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -298,11 +298,60 @@ function EntradaProdutosPage() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Versão Mobile (Cards) */}
+          <div className="md:hidden flex flex-col gap-4 mt-2">
+            {loading && <div className="text-center py-10"><Loader2 className="h-5 w-5 animate-spin mx-auto text-primary" /></div>}
+            {!loading && filtered.map((item) => (
+              <div key={item.id} className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-3 relative">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    {item.produtos?.imagem_url ? (
+                      <img src={item.produtos.imagem_url} alt={item.produtos.nome} className="h-10 w-10 min-w-10 rounded object-cover bg-muted" />
+                    ) : (
+                      <div className="h-10 w-10 min-w-10 rounded bg-muted flex items-center justify-center text-xs">Sem Img</div>
+                    )}
+                    <span className="font-bold text-base line-clamp-1">{item.produtos?.nome ?? "Removido"}</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 p-2 rounded-lg">
+                  <div>
+                    <span className="text-muted-foreground block text-xs">Quantidade:</span>
+                    <span className="font-mono font-bold text-green-500 text-base">+{item.quantidade}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs">Data:</span>
+                    <span className="font-semibold">{format(new Date(item.data_entrada), "dd/MM/yyyy")}</span>
+                  </div>
+                </div>
+                
+                {item.observacoes && (
+                  <div>
+                    <span className="text-muted-foreground block text-xs">Observações:</span>
+                    <p className="text-sm border-l-2 border-border pl-2 mt-1">{item.observacoes}</p>
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+                  <Button size="sm" variant="ghost" className="flex-1 h-9" onClick={() => toast.info("Edição em breve")}>
+                    <Pencil className="h-4 w-4 mr-2" /> Editar
+                  </Button>
+                  <Button size="sm" variant="ghost" className="flex-1 h-9 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(item)} disabled={busy}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Menos
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {!loading && filtered.length === 0 && (
+              <div className="text-center text-muted-foreground py-10 bg-muted/20 rounded-xl">Nenhuma entrada</div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto p-4 sm:p-6 pt-10">
           <DialogHeader>
             <DialogTitle>Registrar Entrada de Estoque</DialogTitle>
             <DialogDescription>Preencha os dados abaixo para atualizar o estoque do produto.</DialogDescription>
@@ -310,9 +359,9 @@ function EntradaProdutosPage() {
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Produto</Label>
+              <Label className="text-base sm:text-sm">Produto</Label>
               <Select value={formData.produto_id} onValueChange={(v) => setFormData(p => ({ ...p, produto_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                <SelectTrigger className="h-12 sm:h-10 text-base"><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
                 <SelectContent>
                   {produtos.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.nome} (Estoque: {p.quantidade_estoque})</SelectItem>
@@ -321,27 +370,27 @@ function EntradaProdutosPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Quantidade</Label>
-                <Input type="number" min="1" value={formData.quantidade} onChange={(e) => setFormData(p => ({ ...p, quantidade: e.target.value }))} placeholder="0" />
+                <Label className="text-base sm:text-sm">Quantidade</Label>
+                <Input className="h-12 sm:h-10 text-base" type="number" min="1" value={formData.quantidade} onChange={(e) => setFormData(p => ({ ...p, quantidade: e.target.value }))} placeholder="0" />
               </div>
               <div className="space-y-2">
-                <Label>Data de Entrada</Label>
-                <Input type="date" value={formData.data_entrada} onChange={(e) => setFormData(p => ({ ...p, data_entrada: e.target.value }))} />
+                <Label className="text-base sm:text-sm">Data de Entrada</Label>
+                <Input className="h-12 sm:h-10 text-base" type="date" value={formData.data_entrada} onChange={(e) => setFormData(p => ({ ...p, data_entrada: e.target.value }))} />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Observações</Label>
-              <Textarea value={formData.observacoes} onChange={(e) => setFormData(p => ({ ...p, observacoes: e.target.value }))} placeholder="Ex: NF 123, fornecedor X..." />
+              <Label className="text-base sm:text-sm">Observações</Label>
+              <Textarea className="min-h-[100px] text-base" value={formData.observacoes} onChange={(e) => setFormData(p => ({ ...p, observacoes: e.target.value }))} placeholder="Ex: NF 123, fornecedor X..." />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenForm(false)} disabled={busy}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={busy}>
-              {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+          <DialogFooter className="mt-4 gap-3 sm:gap-2">
+            <Button className="h-12 sm:h-10 w-full sm:w-auto" variant="outline" onClick={() => setOpenForm(false)} disabled={busy}>Cancelar</Button>
+            <Button className="h-12 sm:h-10 w-full sm:w-auto text-base sm:text-sm" onClick={handleSave} disabled={busy}>
+              {busy ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Plus className="h-5 w-5 md:h-4 md:w-4 mr-2" />}
               Salvar Entrada
             </Button>
           </DialogFooter>
