@@ -843,7 +843,7 @@ function ReceiptDialog({
         <div id="receipt-content" className="p-1.5 bg-white text-black rounded-lg border shadow-sm print:border-0 print:shadow-none print:p-0">
           <div className="text-center border-b pb-4 mb-4">
             <h2 className="text-2xl font-bold uppercase tracking-wider text-black">Comprovante de Pagamento</h2>
-            <p className="text-sm text-gray-500">LaunchApp - Vendas</p>
+            <p className="text-sm text-gray-500">SkyFlow - Vendas</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6 text-xs px-2 text-black">

@@ -2,7 +2,20 @@ import { ReactNode, useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { LayoutDashboard, Package, ShoppingCart, LogOut, ArrowDownToLine, Users, Settings, History, Menu, ChevronDown, Store } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Package, 
+  ShoppingCart, 
+  LogOut, 
+  ArrowDownToLine, 
+  Users, 
+  Settings, 
+  History, 
+  Menu, 
+  ChevronDown, 
+  Store,
+  Rocket
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -110,7 +123,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-4 lg:gap-6">
-              <div className="text-lg font-bold tracking-tight">Vendas<span className="text-primary">.</span>Admin</div>
+              <div className="flex items-center gap-2 text-lg font-bold tracking-tight">
+                <img src="/logo.png" alt="SkyFlow" className="h-8 w-auto object-contain" />
+                <span>Sky<span className="text-primary">Flow</span> Admin</span>
+              </div>
               <nav className="flex items-center gap-2">
                 
                 {/* 1. Balcão Direto */}
@@ -230,7 +246,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
                   <div className="px-6 py-5 border-b border-border">
-                    <SheetTitle className="text-lg font-bold tracking-tight">Vendas<span className="text-primary">.</span>Admin</SheetTitle>
+                    <SheetTitle className="flex items-center gap-2 text-lg font-bold tracking-tight">
+                      <img src="/logo.png" alt="SkyFlow" className="h-8 w-auto object-contain" />
+                      <span>Sky<span className="text-primary">Flow</span> Admin</span>
+                    </SheetTitle>
                     <SheetDescription className="sr-only">Menu de navegação mobile</SheetDescription>
                   </div>
                   <nav className="flex-1 p-3 space-y-1 overflow-auto">
@@ -262,7 +281,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   </nav>
                 </SheetContent>
               </Sheet>
-              <div className="font-bold text-lg">Vendas<span className="text-primary">.</span>Admin</div>
+              <div className="flex items-center gap-2 font-bold text-lg">
+                <img src="/logo.png" alt="SkyFlow" className="h-8 w-auto object-contain" />
+                <span>Sky<span className="text-primary">Flow</span> Admin</span>
+              </div>
             </div>
             
             {/* User Account / Logout */}

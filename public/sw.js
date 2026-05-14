@@ -1,4 +1,4 @@
-const CACHE_NAME = 'launchapp-admin-v1';
+const CACHE_NAME = 'skyflow-admin-v1';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

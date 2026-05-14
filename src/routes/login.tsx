@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -37,10 +37,10 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border/60">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto h-12 w-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
-            <ShieldCheck className="h-6 w-6" />
+          <div className="mx-auto h-20 w-auto flex items-center justify-center mb-4">
+            <img src="/logo.png" alt="SkyFlow Logo" className="h-20 w-auto object-contain" />
           </div>
-          <CardTitle className="text-2xl">Painel Administrativo</CardTitle>
+          <CardTitle className="text-2xl">SkyFlow Admin</CardTitle>
           <CardDescription>Faça login para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent>

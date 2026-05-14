@@ -1,7 +1,7 @@
 {
-  "name": "LaunchApp Vendas Admin",
-  "short_name": "LaunchApp Admin",
-  "description": "Painel de Administração LaunchApp",
+  "name": "SkyFlow",
+  "short_name": "SkyFlow",
+  "description": "Sistema de Vendas Profissional",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

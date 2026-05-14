@@ -18,9 +18,9 @@ export default defineConfig({
       VitePWA({
         registerType: 'autoUpdate',
         manifest: {
-          name: 'LaunchApp Vendas Admin',
-          short_name: 'LaunchApp Admin',
-          description: "Painel de Administração LaunchApp",
+          name: 'SkyFlow Admin',
+          short_name: 'SkyFlow Admin',
+          description: "Sistema de Vendas Profissional",
           theme_color: '#0a0a0f',
           icons: [
             {
