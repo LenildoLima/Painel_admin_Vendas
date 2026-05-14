@@ -17,7 +17,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (!loading && token) return <Navigate to="/dashboard" />;
+  if (!loading && token) return <Navigate to="/balcao" />;
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -25,7 +25,7 @@ function LoginPage() {
     try {
       await signIn(email.trim(), password);
       toast.success("Bem-vindo!");
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/balcao" });
     } catch (err: any) {
       toast.error(err?.message ?? "Falha no login");
     } finally {
