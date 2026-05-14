@@ -72,9 +72,9 @@ export const PEDIDO_STATUSES = [
 ] as const;
 
 export const STATUS_COLORS: Record<string, string> = {
-  Pendente: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40",
-  "Em Preparação": "bg-blue-500/20 text-blue-300 border-blue-500/40",
-  Pronto: "bg-purple-500/20 text-purple-300 border-purple-500/40",
-  Entregue: "bg-green-500/20 text-green-300 border-green-500/40",
-  Cancelado: "bg-red-500/20 text-red-300 border-red-500/40",
+  Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
+  "Em Preparação": "bg-blue-100 text-blue-800 border-blue-300",
+  Pronto: "bg-purple-100 text-purple-800 border-purple-300",
+  Entregue: "bg-green-100 text-green-800 border-green-300",
+  Cancelado: "bg-red-100 text-red-800 border-red-300",
 };

@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/")({ component: Index });
 
 function Index() {
-  const { session, loading } = useAuth();
+  const { token, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-background" />;
-  return <Navigate to={session ? "/dashboard" : "/login"} />;
+  return <Navigate to={token ? "/balcao" : "/login"} />;
 }

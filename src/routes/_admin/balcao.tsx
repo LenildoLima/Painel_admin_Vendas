@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { 
   Search, 
@@ -373,10 +374,10 @@ function BalcaoPage() {
         </div>
       </ScrollArea>
 
-      <div className="p-4 bg-secondary/30 flex-none border-t border-border/20 space-y-4">
-        <div className="space-y-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Forma de Pagamento</p>
-          <RadioGroup 
+      <div className="p-3 bg-secondary/30 flex-none border-t border-border/20 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pagamento</p>
+          <Select 
             value={paymentMethod} 
             onValueChange={(v: any) => {
               setPaymentMethod(v);
@@ -385,56 +386,44 @@ function BalcaoPage() {
                 loadPixConfig();
               }
             }}
-            className="grid grid-cols-2 gap-2"
           >
-            {[
-              { id: "Dinheiro", icon: Banknote, label: "Dinheiro" },
-              { id: "PIX", icon: Smartphone, label: "PIX" },
-              { id: "Débito", icon: CreditCard, label: "Débito" },
-              { id: "Crédito", icon: CreditCard, label: "Crédito" },
-            ].map((m) => (
-              <div key={m.id}>
-                <RadioGroupItem value={m.id} id={m.id} className="peer sr-only" />
-                <Label
-                  htmlFor={m.id}
-                  className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
-                >
-                  <m.icon className="mb-1 h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase">{m.label}</span>
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
+            <SelectTrigger className="w-[140px] h-8 text-xs font-bold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Dinheiro"><span className="flex items-center gap-2"><Banknote className="h-3.5 w-3.5" /> Dinheiro</span></SelectItem>
+              <SelectItem value="PIX"><span className="flex items-center gap-2"><Smartphone className="h-3.5 w-3.5" /> PIX</span></SelectItem>
+              <SelectItem value="Débito"><span className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5" /> Débito</span></SelectItem>
+              <SelectItem value="Crédito"><span className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5" /> Crédito</span></SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <Separator className="bg-border/20" />
-
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <span className="text-lg font-black uppercase tracking-tight">Total</span>
-            <span className="text-2xl font-black text-primary font-mono">{fmt(subtotal)}</span>
+        {paymentMethod === "PIX" && (
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase">
+            {pixConfirmed ? (
+              <span className="text-green-500 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> PIX Confirmado</span>
+            ) : (
+              <span className="text-yellow-500 flex items-center gap-1"><QrCode className="h-3 w-3" /> Aguardando PIX</span>
+            )}
           </div>
-          {paymentMethod === "PIX" && (
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase">
-              {pixConfirmed ? (
-                <span className="text-green-500 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> PIX Confirmado</span>
-              ) : (
-                <span className="text-yellow-500 flex items-center gap-1"><QrCode className="h-3 w-3" /> Aguardando PIX</span>
-              )}
-            </div>
-          )}
+        )}
+
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-black uppercase tracking-tight">Total</span>
+          <span className="text-2xl font-black font-mono bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 drop-shadow-sm">{fmt(subtotal)}</span>
         </div>
 
-        <div className="grid gap-2 text-white">
+        <div className="grid gap-2">
           <Button 
             onClick={finalizarVenda}
             disabled={cart.length === 0 || busy || (paymentMethod === "PIX" && !pixConfirmed)} 
-            className="h-14 text-lg font-black uppercase tracking-wider shadow-lg shadow-primary/20 active:scale-95 transition-all"
+            className="h-12 text-base font-black uppercase tracking-wider shadow-xl shadow-purple-500/25 active:scale-95 transition-all bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 hover:from-cyan-500 hover:via-violet-600 hover:to-fuchsia-600 text-white border-0 disabled:opacity-50 disabled:pointer-events-none"
           >
-            {busy ? <Loader2 className="h-6 w-6 animate-spin" /> : "FINALIZAR (ENTER)"}
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "FINALIZAR (ENTER)"}
           </Button>
-          <Button variant="outline" size="sm" onClick={clearCart} disabled={cart.length === 0} className="h-10 text-xs font-bold gap-2">
-            <Trash2 className="h-4 w-4" /> LIMPAR (ESC)
+          <Button variant="outline" size="sm" onClick={clearCart} disabled={cart.length === 0} className="h-8 text-xs font-bold gap-2 text-muted-foreground border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors">
+            <Trash2 className="h-3.5 w-3.5" /> LIMPAR (ESC)
           </Button>
         </div>
       </div>
@@ -442,35 +431,35 @@ function BalcaoPage() {
   );
 
   return (
-    <div className={cn("flex flex-col h-full bg-background", isFullscreen && "fixed inset-0 z-50 p-4")}>
-      <div className="flex flex-row items-center justify-between gap-3 mb-4 bg-card p-4 rounded-xl border border-border/40 shadow-sm">
+    <div className={cn("flex flex-col bg-background", isFullscreen ? "fixed inset-0 z-50 p-4" : "h-[calc(100vh-3.5rem-1rem)] lg:h-[calc(100vh-3.5rem-1.5rem)]")}>
+      <div className="flex flex-row items-center justify-between gap-3 mb-3 bg-card px-4 py-2.5 rounded-xl border border-border/40 shadow-sm flex-none">
         <div className="flex items-center gap-2 lg:gap-4">
           <div className="hidden sm:flex items-center gap-2">
-            <div className="bg-primary/10 p-2 rounded-full"><Clock className="h-4 w-4 text-primary" /></div>
-            <p className="text-lg font-mono font-bold">{now.toLocaleTimeString("pt-BR")}</p>
+            <div className="bg-primary/10 p-1.5 rounded-full"><Clock className="h-3.5 w-3.5 text-primary" /></div>
+            <p className="text-sm font-mono font-bold">{now.toLocaleTimeString("pt-BR")}</p>
           </div>
-          <div className="hidden sm:block h-4 w-[1px] bg-border mx-2" />
+          <div className="hidden sm:block h-4 w-[1px] bg-border mx-1" />
           <div>
-            <h1 className="text-xl md:text-3xl font-black uppercase tracking-tight text-primary leading-none">Balcão</h1>
-            <p className="text-muted-foreground font-medium text-xs md:text-sm hidden sm:block">Ponto de Venda</p>
+            <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-primary leading-none">Balcão</h1>
+            <p className="text-muted-foreground font-medium text-[10px] md:text-xs hidden sm:block">Ponto de Venda</p>
           </div>
         </div>
         <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Buscar..." 
-              className="pl-9 md:pl-10 h-10 md:h-12 text-sm md:text-lg bg-card border-border/50 focus:border-primary/50 xl:rounded-xl rounded-full shadow-sm" 
+              className="pl-9 h-9 text-sm bg-card border-border/50 focus:border-primary/50 rounded-full shadow-sm" 
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
         </div>
-        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Tela Cheia (F11)" className="hidden lg:flex">
-          {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Tela Cheia (F11)" className="hidden lg:flex h-8 w-8">
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </Button>
       </div>
 
-      <div className="flex flex-col lg:flex-row flex-1 gap-4 overflow-hidden min-h-0 relative">
-        <div className="flex-1 lg:flex-[3] flex flex-col gap-4 min-w-0 pb-20 lg:pb-0">
+      <div className="flex flex-col lg:flex-row flex-1 gap-4 min-h-0 relative">
+        <div className="flex-1 lg:flex-[3] flex flex-col gap-4 min-w-0 pb-20 lg:pb-0 overflow-hidden">
           {filteredProducts.length === 0 && (
              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center bg-card rounded-xl border border-border/40">
                <Package className="h-12 w-12 mb-4 opacity-20" />
@@ -551,7 +540,7 @@ function BalcaoPage() {
         </div>
 
         {/* Cart */}
-        <Card className="hidden lg:flex flex-none h-[45vh] lg:h-auto lg:flex-[1.2] flex-col bg-card border-border/40 shadow-xl overflow-hidden lg:min-w-[320px]">
+        <Card className="hidden lg:flex flex-none lg:h-full lg:flex-[1.2] flex-col bg-card border-border/40 shadow-xl overflow-hidden lg:min-w-[320px]">
           {renderCartContent()}
         </Card>
       </div>
